@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Hangman</title>
+</head>
+	<body>
+		<div id="message">
+			Display Stuff Here
+		</div>
+		<div>
+			<input id="guess">
+			<button id="guessBtn">Guess</button>
+		</div>
+		<div id="word"></div>
+		<script>
+			const word = 'sean';
+			let misses = 0;
+			const guesses = [];
+
+			const guessInput = document.getElementById('guess');
+			const guessBtn = document.getElementById('guessBtn');
+			const msgDiv = document.getElementById('message');
+			const wordDiv = document.getElementById('word');
+
+			const blank = document.createElement('div');
+			blank.style.display = 'inline-block';
+			blank.style.borderBottom = '2px solid black';
+			blank.style.width = '20px';
+			blank.style.height = '20px';
+
+			//['s','e','a','n']
+			word.split('').forEach((letter, i) => {
+				const placeHolder = blank.cloneNode(true);
+
+				placeHolder.id = i;
+				placeHolder.dataset.letter = letter;
+				wordDiv.appendChild(placeHolder);
+			});
+
+			guessBtn.onclick = () => {
+				const guessValue = guessInput.value;
+
+				// check if letter has been guessed
+				if (guesses.includes(guessValue)) {
+					msgDiv.innerHTML = `Letter ${guessValue} has already been guessed`;
+				} else {
+					guesses.push(guessValue);
+
+					// check if letter is in the word
+					if (word.includes(guessValue)) {
+						// something good
+					} else {
+						misses++;
+						msgDiv.innerHTML = `${misses} Miss${(misses > 1) ? 'es' : ''}`
+						msgDiv.innerHTML += `${misses >= 6 ? ' Game Over' : ''}`;
+					}
+				}
+			};
+
+		</script>		
+	</body>
+</html>
