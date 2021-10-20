@@ -10,38 +10,121 @@
 		<div id="message">
 			Display Stuff Here
 		</div>
+		<div>Category: <span id="category"></span></div>
 		<div>
-			<input id="guess">
+			<input id="guess" maxlength="1">
 			<button id="guessBtn">Guess</button>
+			<button id="resetBtn" hidden>Reset Game</button>
 		</div>
 		<div id="word"></div>
 		<script>
-			const word = 'sean';
-			let misses = 0;
+			const words = {
+				"Place": [
+					"pequea",
+					"new york",
+					"lancaster",
+					"conestoga"
+				],
+				"Name": [
+					"sean",
+					"greg",
+					"judy",
+					"winston churchill"
+				],
+				"Animal": [
+					"dog",
+					"cat",
+					"cow",
+					"elephant",
+					"horse",
+					"donkey"
+				]
+			};
 			const guesses = [];
+			
+			let word = 'greg';
+			let gameover = false;
+			let misses = 0;
+			let matches = 0;
 
 			const guessInput = document.getElementById('guess');
 			const guessBtn = document.getElementById('guessBtn');
+			const resetBtn = document.getElementById('resetBtn');
+			const categorySpan = document.getElementById('category');
 			const msgDiv = document.getElementById('message');
 			const wordDiv = document.getElementById('word');
 
+			const getRandomIndex = (arrayLength) => {
+				return Math.floor(Math.random() * (arrayLength));
+			};
+
+			const getRandomWordFromArray = (array) => {
+				const randomIndex = getRandomIndex(array.length);
+				const randomWord = array[randomIndex];
+				return randomWord;
+			}
+
+			const generatePlaceholders = () => {
+				wordDiv.innerHTML = '';
+
+				//['s','e','a','n']
+				Array.from(word).forEach((letter, i) => {
+					const placeHolder = blank.cloneNode(true);
+					if (letter !== ' ') {
+						placeHolder.style.borderBottom = '2px solid black';
+					}
+					placeHolder.id = `letter-${i}`;
+					placeHolder.dataset.letter = letter;
+					wordDiv.appendChild(placeHolder);
+				});
+			}
+
+			const getWord = () => {
+				const categories = Object.keys(words);
+				const category = getRandomWordFromArray(categories);
+
+				// update display with chosen category
+				categorySpan.innerHTML = category;
+
+				word = getRandomWordFromArray(words[category]);
+
+				generatePlaceholders();
+			};
+
+			const endGameCheck = () => {
+				if (word.length === matches) { // win
+					msgDiv.innerHTML = "You Win!";
+					gameover = true;
+				} else if (misses >= 6) { // loose
+					msgDiv.innerHTML += ' Game Over';
+					gameover = true;
+				}
+
+				if (gameover) {
+					resetBtn.hidden = false;	
+				}
+			};
+
 			const blank = document.createElement('div');
 			blank.style.display = 'inline-block';
-			blank.style.borderBottom = '2px solid black';
 			blank.style.width = '20px';
 			blank.style.height = '20px';
+			blank.style.marginRight = '10px';
 
-			//['s','e','a','n']
-			word.split('').forEach((letter, i) => {
-				const placeHolder = blank.cloneNode(true);
-
-				placeHolder.id = i;
-				placeHolder.dataset.letter = letter;
-				wordDiv.appendChild(placeHolder);
-			});
+			resetBtn.onclick = () => {
+				getWord();
+				msgDiv.innerHTML = 'New Game';
+				gameover = false;
+				resetBtn.hidden = true;
+			};		
 
 			guessBtn.onclick = () => {
 				const guessValue = guessInput.value;
+				guessInput.value = '';
+
+				if (gameover) {
+					return;
+				}
 
 				// check if letter has been guessed
 				if (guesses.includes(guessValue)) {
@@ -52,13 +135,25 @@
 					// check if letter is in the word
 					if (word.includes(guessValue)) {
 						// something good
+						Array.from(word).forEach((letter, i) => {
+							if (guessValue === letter) {
+								const placeHolder = document.getElementById(`letter-${i}`);
+								placeHolder.innerText = letter;
+								matches++;
+							}
+						});
+						endGameCheck();
 					} else {
 						misses++;
 						msgDiv.innerHTML = `${misses} Miss${(misses > 1) ? 'es' : ''}`
-						msgDiv.innerHTML += `${misses >= 6 ? ' Game Over' : ''}`;
+						endGameCheck();
 					}
 				}
+
+				guessInput.focus();
 			};
+
+			getWord();
 
 		</script>		
 	</body>
