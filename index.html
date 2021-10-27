@@ -26,23 +26,36 @@
 					guesses
 					matches
 					misses
-				validate input
-				account for spaces in words
 
+				validate input
+					case agnostic
+					account for spaces in words
+
+				Better messaging
+
+				improve UI
+					center enitre board
+					visualize hangman
+						remove missed message?
+
+
+				Feature
+				Guess word
+				change font
 			*/
 
 			const words = {
 				"Place": [
-					"pequea",
-					"new york",
-					"lancaster",
-					"conestoga"
+					"Pequea",
+					"New York",
+					"Lancaster",
+					"Conestoga"
 				],
 				"Name": [
-					"sean",
-					"greg",
-					"judy",
-					"winston churchill"
+					"Sean",
+					"Greg",
+					"Judy",
+					"Winston Churchill"
 				],
 				"Animal": [
 					"dog",
@@ -53,13 +66,14 @@
 					"donkey"
 				]
 			};
-			const guesses = [];
 			
-			let word = 'greg';
+			let guesses = [];
+			let word = '';
 			let gameover = false;
 			let misses = 0;
 			let matches = 0;
 
+			const AlphaPattern = new RegExp(/[a-zA-Z]/);
 			const guessInput = document.getElementById('guess');
 			const guessBtn = document.getElementById('guessBtn');
 			const resetBtn = document.getElementById('resetBtn');
@@ -105,11 +119,11 @@
 			};
 
 			const endGameCheck = () => {
-				if (word.length === matches) { // win
-					msgDiv.innerHTML = "You Win!";
+				if (word.replaceAll(' ', '').length === matches) { // win
+					setSuccessMessage('You Win!')
 					gameover = true;
 				} else if (misses >= 6) { // loose
-					msgDiv.innerHTML += ' Game Over';
+					setErrorMessage('You Loose! Game Over')
 					gameover = true;
 				}
 
@@ -124,41 +138,71 @@
 			blank.style.height = '20px';
 			blank.style.marginRight = '10px';
 
-			resetBtn.onclick = () => {
-				getWord();
-				msgDiv.innerHTML = 'New Game';
+			const setMessage = (message, color = 'black') => {
+				msgDiv.style.color = color;
+				msgDiv.innerHTML = message;
+			}
+
+			const setSuccessMessage = (successMessage) => {
+				setMessage(successMessage, 'green');
+			}
+
+			const setErrorMessage = (errorMessage) => {
+				setMessage(errorMessage, 'red');
+			}
+
+			const resetGame = () => {
+				guesses = [];
+				word = '';
 				gameover = false;
+				misses = 0;
+				matches = 0;
+				getWord();
+				setMessage('New Game');
 				resetBtn.hidden = true;
+				guessInput.focus();
+			}
+
+			resetBtn.onclick = () => {
+				resetGame();
 			};		
 
 			guessBtn.onclick = () => {
-				const guessValue = guessInput.value;
+				let guessValue = guessInput.value;
 				guessInput.value = '';
 
 				if (gameover) {
 					return;
 				}
 
+				if (!AlphaPattern.test(guessValue)) {
+					setErrorMessage(`Character ${guessValue} is invalid!`);
+					return;
+				}
+
+				guessValue = guessValue.toLowerCase();
+
 				// check if letter has been guessed
 				if (guesses.includes(guessValue)) {
-					msgDiv.innerHTML = `Letter ${guessValue} has already been guessed`;
+					setMessage(`Letter ${guessValue} has already been guessed`);
 				} else {
 					guesses.push(guessValue);
 
 					// check if letter is in the word
-					if (word.includes(guessValue)) {
+					if (word.toLowerCase().includes(guessValue)) {
 						// something good
 						Array.from(word).forEach((letter, i) => {
-							if (guessValue === letter) {
+							if (guessValue === letter.toLowerCase()) {
 								const placeHolder = document.getElementById(`letter-${i}`);
 								placeHolder.innerText = letter;
 								matches++;
 							}
 						});
+						setSuccessMessage('Match Found!')
 						endGameCheck();
 					} else {
 						misses++;
-						msgDiv.innerHTML = `${misses} Miss${(misses > 1) ? 'es' : ''}`
+						setErrorMessage(`${misses} Miss${(misses > 1) ? 'es' : ''}`);
 						endGameCheck();
 					}
 				}
@@ -166,7 +210,7 @@
 				guessInput.focus();
 			};
 
-			getWord();
+			resetGame();
 
 		</script>		
 	</body>
