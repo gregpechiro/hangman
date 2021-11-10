@@ -7,41 +7,45 @@
 	<title>Hangman</title>
 </head>
 	<body>
-		<div id="message">
-			Display Stuff Here
+		<div style="margin: auto; width: 50%; text-align: center;">
+			<br><br>
+			<div id="message">
+				Display Stuff Here
+			</div>
+			<div>Category: <span id="category"></span></div>
+			<div>
+				<button id="resetBtn" hidden>Reset Game</button>
+			</div>
+			<div>
+				<input id="guessWord">
+				<button id="guessWordBtn">Guess Word</button>
+			</div>
+			<br>
+			<div id="bodyPart-1" class="bodyPart" hidden>Head</div>
+			<div id="bodyPart-2" class="bodyPart" hidden>Body</div>
+			<div id="bodyPart-3" class="bodyPart" hidden>Left Arm</div>
+			<div id="bodyPart-4" class="bodyPart" hidden>Right Arm</div>
+			<div id="bodyPart-5" class="bodyPart" hidden>Left Leg</div>
+			<div id="bodyPart-6" class="bodyPart" hidden>Right Leg</div>
+			<br>
+			<div id="word"></div>
 		</div>
-		<div>Category: <span id="category"></span></div>
-		<div>
-			<input id="guess" maxlength="1">
-			<button id="guessBtn">Guess</button>
-			<button id="resetBtn" hidden>Reset Game</button>
-		</div>
-		<div id="word"></div>
+
 		<script>
 			/*
-				
 				stuff needing implemented
 
-				reset full game
-					guesses
-					matches
-					misses
-
-				validate input
-					case agnostic
-					account for spaces in words
-
-				Better messaging
-
 				improve UI
-					center enitre board
+					change font
 					visualize hangman
 						remove missed message?
 
+				Clean up
 
 				Feature
-				Guess word
-				change font
+					remove input and button
+
+				auto guessing
 			*/
 
 			const words = {
@@ -73,13 +77,18 @@
 			let misses = 0;
 			let matches = 0;
 
-			const AlphaPattern = new RegExp(/[a-zA-Z]/);
-			const guessInput = document.getElementById('guess');
-			const guessBtn = document.getElementById('guessBtn');
+			const guessWordInput = document.getElementById('guessWord');
+			const guessWordBtn = document.getElementById('guessWordBtn');
 			const resetBtn = document.getElementById('resetBtn');
 			const categorySpan = document.getElementById('category');
 			const msgDiv = document.getElementById('message');
 			const wordDiv = document.getElementById('word');
+
+			const blank = document.createElement('div');
+			blank.style.display = 'inline-block';
+			blank.style.width = '20px';
+			blank.style.height = '20px';
+			blank.style.marginRight = '10px';
 
 			const getRandomIndex = (arrayLength) => {
 				return Math.floor(Math.random() * (arrayLength));
@@ -99,6 +108,7 @@
 					const placeHolder = blank.cloneNode(true);
 					if (letter !== ' ') {
 						placeHolder.style.borderBottom = '2px solid black';
+						placeHolder.className = 'placeholder'
 					}
 					placeHolder.id = `letter-${i}`;
 					placeHolder.dataset.letter = letter;
@@ -118,25 +128,35 @@
 				generatePlaceholders();
 			};
 
-			const endGameCheck = () => {
-				if (word.replaceAll(' ', '').length === matches) { // win
+			const revealWord = () => {
+				const placeHolders = document.getElementsByClassName('placeholder');
+				Array.from(placeHolders).forEach((placeholder) => {
+					// const letter = placeholder.dataset.letter;
+					// placeholder.innerHTML = letter;
+					placeholder.innerText = placeholder.dataset.letter;
+				});
+			}
+
+			const endGameCheck = (guessWord = '') => {
+				if (word.replaceAll(' ', '').length === matches || word.toLowerCase() === guessWord.toLowerCase()) { // win
 					setSuccessMessage('You Win!')
 					gameover = true;
-				} else if (misses >= 6) { // loose
+				} else if (guessWord !== '') {
+					executeMiss();
+				}
+
+				if (!gameover && misses >= 6) { // loose
 					setErrorMessage('You Loose! Game Over')
 					gameover = true;
 				}
 
 				if (gameover) {
-					resetBtn.hidden = false;	
+					resetBtn.hidden = false;
+					guessWordInput.hidden = true;
+					guessWordBtn.hidden = true;
+					revealWord();
 				}
 			};
-
-			const blank = document.createElement('div');
-			blank.style.display = 'inline-block';
-			blank.style.width = '20px';
-			blank.style.height = '20px';
-			blank.style.marginRight = '10px';
 
 			const setMessage = (message, color = 'black') => {
 				msgDiv.style.color = color;
@@ -151,6 +171,13 @@
 				setMessage(errorMessage, 'red');
 			}
 
+			const executeMiss = () => {
+				misses++;
+				const bodyPart = document.getElementById(`bodyPart-${misses}`);
+				bodyPart.hidden = false;
+				setErrorMessage(`${misses} Miss${(misses > 1) ? 'es' : ''}`);
+			}
+
 			const resetGame = () => {
 				guesses = [];
 				word = '';
@@ -159,28 +186,29 @@
 				matches = 0;
 				getWord();
 				setMessage('New Game');
+				guessWordInput.hidden = false;
+				guessWordBtn.hidden = false;
+
+				const bodyParts = document.getElementsByClassName('bodyPart');
+				Array.from(bodyParts).forEach((bodyPart) => {
+					bodyPart.hidden = true
+				});
 				resetBtn.hidden = true;
-				guessInput.focus();
+				guessWordInput.blur();
 			}
 
 			resetBtn.onclick = () => {
 				resetGame();
 			};		
 
-			guessBtn.onclick = () => {
-				let guessValue = guessInput.value;
-				guessInput.value = '';
-
-				if (gameover) {
+			// guessBtn.onclick = () => {
+			document.addEventListener('keydown', (event) => {
+				if (gameover || guessWordInput === document.activeElement || event.keyCode < 65 || event.keyCode > 90) {
 					return;
 				}
 
-				if (!AlphaPattern.test(guessValue)) {
-					setErrorMessage(`Character ${guessValue} is invalid!`);
-					return;
-				}
-
-				guessValue = guessValue.toLowerCase();
+				let guessValue = event.key.toLowerCase();
+				// guessValue = guessValue.toLowerCase();
 
 				// check if letter has been guessed
 				if (guesses.includes(guessValue)) {
@@ -201,13 +229,16 @@
 						setSuccessMessage('Match Found!')
 						endGameCheck();
 					} else {
-						misses++;
-						setErrorMessage(`${misses} Miss${(misses > 1) ? 'es' : ''}`);
+						executeMiss();
 						endGameCheck();
 					}
 				}
+			});
 
-				guessInput.focus();
+			guessWordBtn.onclick = () => {
+				const guessWord = guessWordInput.value;
+				guessWordInput.value = '';
+				endGameCheck(guessWord);
 			};
 
 			resetGame();
